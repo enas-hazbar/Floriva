@@ -1,0 +1,393 @@
+{% extends "layout_dashboard.html" %}
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+</head>
+<body class="dark-mode">
+
+<div class="dashboard-container">
+  <!-- 🌙☀️ Dark/Light Mode Toggle Switch -->
+  <div class="toggle-container">
+    <label class="mode-switch">
+      <input type="checkbox" id="modeToggle" checked>
+      <span class="slider">
+        <span class="icon moon">🌙</span>
+        <span class="icon sun">☀️</span>
+      </span>
+    </label>
+  </div>
+    <div style="width:65px; height: 65px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+      <path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/>
+    </svg>
+    <!-- 👤 User Info Popup -->
+<div id="userPopup" class="user-popup">
+  <h3>Welcome, {{ session.username }}</h3>
+  <button class="logout-btn">Logout</button>
+</div>
+
+    </div>
+  <h2>📊 Greenhouse Data Overview</h2>
+  
+
+  <!-- 🔹 Filter Buttons -->
+  <div style="text-align:center; margin-bottom: 20px;">
+    <a href="{{ url_for('dashboard_filter', view='day') }}" class="btn-nav {% if view_type=='day' %}active{% endif %}">Day</a>
+    <a href="{{ url_for('dashboard_filter', view='week') }}" class="btn-nav {% if view_type=='week' %}active{% endif %}">Week</a>
+    <a href="{{ url_for('dashboard_filter', view='month') }}" class="btn-nav {% if view_type=='month' %}active{% endif %}">Month</a>
+  </div>
+
+  <!-- 🔹 Date / Week / Month Picker -->
+  <div style="text-align:center; margin-bottom: 25px; ">
+    <h3>
+      <span>
+     {% if view_type == 'day' %}
+        📅 {{ selected_date | datetimeformat }}
+      {% elif view_type == 'week' %}
+        📆 Week of {{ selected_date | weekformat }}
+      {% else %}
+        📆 Month of {{ selected_date[:7] | datetimeformat }}
+      {% endif %}
+    </span>
+    </h3>
+<div>
+    <form method="get" action="{{ url_for('dashboard_filter') }}" id="dateForm">
+      <input type="hidden" name="view" value="{{ view_type }}">
+      <label style="margin-right: 8px; font-weight: bold; ">
+        {% if view_type == 'month' %}
+          🗓 Select a month:
+        {% elif view_type == 'week' %}
+          📆 Select a week:
+        {% else %}
+          📅 Select a date:
+        {% endif %}
+      </label>
+      <input
+        type="{% if view_type == 'month' %}month{% elif view_type == 'week' %}week{% else %}date{% endif %}"
+        name="date"
+        value="{{ selected_date }}"
+        style="padding: 6px 10px; border-radius: 6px; border: 1px solid #4CAF50;"
+        onchange="document.getElementById('dateForm').submit();"
+      >
+    </form>
+    </div>
+  </div>
+
+  <!-- 🔹 Chart (Week & Month only) -->
+  {% if view_type != 'day' %}
+  <canvas id="dataChart" width="900" height="400"></canvas>
+  {% endif %}
+
+  <!-- 🔹 Table (Day only) -->
+  {% if view_type == 'day' %}
+    <div id="liveDataContainer">
+      {% if data %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Temperature (°C)</th>
+            <th>Humidity (%)</th>
+            <th>Voltage (V)</th>
+            <th>Lights</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in data %}
+          <tr>
+            <td>{{ row.period }}</td>
+            <td>{{ row.temperature }} °C</td>
+            <td>{{ row.humidity }}%</td>
+            <td>{{ row.voltage }} V</td>
+            <td>{{ row.lights if row.lights else "—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="text-align:center;">No data yet for this day 🌿</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <!-- 🔹 Stats Summary -->
+  {% if stats %}
+  <div style="margin-top: 20px; text-align: center;">
+    🌡 <strong>Temp:</strong> lowest {{ stats.low_temp }} °C | highest {{ stats.high_temp }} °C |
+    💧 <strong>Humidity:</strong> lowest {{ stats.low_hum }} % | highest {{ stats.high_hum }} %
+  </div>
+  {% endif %}
+
+  <!-- 🔹 Navigation Buttons -->
+  <div class="nav-buttons" style="margin-top: 30px; text-align: center;">
+    <a href="{{ url_for('dashboard_filter', view=view_type, date=prev_date) }}" class="btn-nav">⬅️ Previous {{ view_type|capitalize }}</a>
+    <a href="{{ url_for('dashboard_filter', view=view_type, date=next_date) }}" class="btn-nav">Next {{ view_type|capitalize }} ➡️</a>
+  </div>
+</div>
+
+<!-- 📈 Chart.js (Week/Month) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% if view_type != 'day' %}
+<script>
+const chartData = {{ data|tojson | safe }};
+const ctx = document.getElementById('dataChart').getContext('2d');
+const viewType = "{{ view_type }}";
+
+const labels = chartData.map(r => r.date);
+const temps = chartData.map(r => r.avg_temp);
+const hums = chartData.map(r => r.avg_hum);
+const volts = chartData.map(r => r.avg_voltage);
+const lightsPct = chartData.map(r => r.lights_on_pct);
+
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      { label: '🌡 Temperature (°C)', data: temps, borderColor: 'rgba(255,99,132,1)', backgroundColor: 'rgba(255,99,132,0.15)', fill: true, tension: 0.4 },
+      { label: '💧 Humidity (%)', data: hums, borderColor: 'rgba(54,162,235,1)', backgroundColor: 'rgba(54,162,235,0.15)', fill: true, tension: 0.4 },
+      { label: '⚡ Voltage (V)', data: volts, borderColor: 'rgba(255,206,86,1)', backgroundColor: 'rgba(255,206,86,0.15)', fill: true, tension: 0.4 },
+      { label: '💡 Lights ON (%)', data: lightsPct, borderColor: 'rgba(75,192,192,1)', backgroundColor: 'rgba(75,192,192,0.1)', fill: false, borderDash: [5,5], tension: 0.4, yAxisID: 'y1' }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { position: 'top' }, title: { display: true, text: `📈 Average Sensor Data per ${viewType}` }},
+    scales: {
+      x: { title: { display: true, text: "Date" }},
+      y: { title: { display: true, text: "Temp / Hum / Voltage" }, beginAtZero: true },
+      y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: "Lights (%)" }, min: 0, max: 100 }
+    }
+  }
+});
+</script>
+{% endif %}
+
+<!-- 🔄 Auto-refresh every 5 seconds -->
+<script>
+  const userIcon = document.querySelector('svg');
+const userPopup = document.getElementById('userPopup');
+userIcon.addEventListener('click', (e) => {
+  e.stopPropagation();
+  userPopup.style.display = (userPopup.style.display === 'block') ? 'none' : 'block';
+});
+
+// Close popup if clicking outside
+document.addEventListener('click', (e) => {
+  if (!userPopup.contains(e.target) && e.target !== userIcon) {
+    userPopup.style.display = 'none';
+  }
+});
+
+setInterval(() => {
+  fetch(window.location.href)
+    .then(res => res.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const newDoc = parser.parseFromString(html, 'text/html');
+      const newContent = newDoc.querySelector('#liveDataContainer');
+      if (newContent) {
+        document.querySelector('#liveDataContainer').innerHTML = newContent.innerHTML;
+      }
+    });
+}, 5000);
+
+// 🌗 Dark/Light Mode Toggle
+const modeToggle = document.getElementById('modeToggle');
+modeToggle.addEventListener('change', function() {
+  document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+});
+window.onload = () => {
+  const darkMode = localStorage.getItem('darkMode') === 'true';
+  document.body.classList.toggle('dark-mode', darkMode);
+  modeToggle.checked = darkMode;
+};
+  document.querySelector('.logout-btn').addEventListener('click', () => {
+    fetch('/logout')
+      .then(() => window.location.href = '/');
+  });
+</script>
+
+<!-- 💅 Styles -->
+<style>
+.dark-mode { background-color: #121212; color: #f1f1f1; }
+
+.dashboard-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: #f9f9f9;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.toggle-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+/* 🌙☀️ Mode Switch */
+.mode-switch {
+  position: relative;
+  display: inline-block;
+  width: 70px;
+  height: 36px;
+}
+.mode-switch input { display: none; }
+.slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 50px;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.4s;
+  font-size: 20px;
+}
+.slider .sun { display: none; }
+.slider .moon { display: block; color: #c3a6ff; }
+
+/* When bright mode */
+input:checked + .slider {
+  background-color: #ffffff;
+  color: #007bff;
+}
+input:checked + .slider .moon { display: none; }
+input:checked + .slider .sun { display: block; }
+
+/* Buttons + Tables (your style unchanged) */
+.btn-nav {
+  display: inline-block;
+  padding: 10px 18px;
+  background-color: #4CAF50;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  margin: 0 10px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+.btn-nav:hover { background-color: #45a049; }
+.btn-nav.active { background-color: #2e7d32; }
+
+.data-table {
+  width: 90%;
+  margin: 20px auto;
+  border-collapse: collapse;
+}
+.data-table th, .data-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+.data-table th { background-color: #4CAF50; color: white; }
+
+body.dark-mode .dashboard-container { background-color: #1e1e1e; }
+body.dark-mode .data-table { background-color: #222; color: white; }
+body.dark-mode .data-table th { background-color: #333; color: #4CAF50; }
+
+
+body:not(.dark-mode) .dashboard-container { background-color: #f9f9f9; color: black; }
+body:not(.dark-mode) .data-table { background-color: white; color: black; }
+body:not(.dark-mode) .data-table th { background-color: #4CAF50; color: white; }
+svg {
+  fill: black; /* Default (light mode) */
+  cursor: pointer;
+  transition: fill 0.3s ease;
+}
+
+body.dark-mode svg {
+  fill: white; /* Turn white in dark mode */
+}
+body.dark-mode .user-popup {
+    background: rgb(255, 255, 255);
+}
+body.dark-mode .user-popup h3 {
+  color: #000;
+}
+
+/* 👤 User Popup */
+.user-popup {
+  display: none;
+  position: absolute;
+  top: 100px;
+  left: 20px;
+  background: hsla(0, 0%, 0%, 0.72);
+  color: rgb(255, 255, 255);
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  z-index: 1000;
+  text-align: center;
+  width: 200px;
+}
+.user-popup h3 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  color: #ffffff;
+}
+.logout-btn {
+  background: #740606;
+  border: solid 1px;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.logout-btn:hover {
+  background: #45a049;
+}
+/* 🌡 Temperature Icon - gentle glow */
+.chart-legend-icon-temp {
+  display: inline-block;
+  animation: tempGlow 2s ease-in-out infinite alternate;
+}
+@keyframes tempGlow {
+  from { text-shadow: 0 0 2px rgba(255,99,132,0.5); }
+  to { text-shadow: 0 0 10px rgba(255,99,132,1); }
+}
+
+/* 💧 Humidity Icon - floating effect */
+.chart-legend-icon-hum {
+  display: inline-block;
+  animation: humFloat 3s ease-in-out infinite alternate;
+}
+@keyframes humFloat {
+  from { transform: translateY(0); }
+  to { transform: translateY(-3px); }
+}
+
+/* ⚡ Voltage Icon - flicker */
+.chart-legend-icon-voltage {
+  display: inline-block;
+  animation: voltageBlink 1.5s infinite;
+}
+@keyframes voltageBlink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.4; }
+}
+
+/* 💡 Lights Icon - pulse */
+.chart-legend-icon-lights {
+  display: inline-block;
+  animation: lightPulse 2s infinite alternate;
+}
+@keyframes lightPulse {
+  from { transform: scale(1); filter: brightness(0.9); }
+  to { transform: scale(1.1); filter: brightness(1.4); }
+}
+
+</style>
+
+</body>
+</html>
+{% endblock %}

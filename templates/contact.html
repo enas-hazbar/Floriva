@@ -1,0 +1,56 @@
+{% set active_page = request.endpoint %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Floriva</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% set active_page = request.endpoint %}
+
+    <div class="image-container">
+        <img class="background">
+        
+        <div class="menu">
+            <img class="logo" src="{{ url_for('static', filename='Logo.png') }}" alt="Logo">
+            <h1 class="header">Floriva</h1>
+
+            <p class="home">
+                <a href="{{ url_for('index') }}" class="{% if active_page == 'index' %}active{% endif %}">Home</a>
+            </p>
+            <p class="about">
+                <a href="{{ url_for('about') }}" class="{% if active_page == 'about' %}active{% endif %}">About</a>
+            </p>
+            <p class="contact">
+                <a href="{{ url_for('contact') }}" class="{% if active_page == 'contact' %}active{% endif %}">Contact</a>
+            </p>
+        </div>
+
+    <div class="contact_text">
+        <h1>Contact us</h1>
+       
+    <svg class="email-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+    <path d="M112 128C85.5 128 64 149.5 64 176C64 191.1 71.1 205.3 83.2 214.4L291.2 370.4C308.3 383.2 331.7 383.2 348.8 370.4L556.8 214.4C568.9 205.3 576 191.1 576 176C576 149.5 554.5 128 528 128L112 128zM64 260L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 260L377.6 408.8C343.5 434.4 296.5 434.4 262.4 408.8L64 260z" />
+    </svg>   <p class="emailp">hazbarenas@gmail.com</p> 
+       <svg class="phone_icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+        <path d="M160 96C124.7 96 96 124.7 96 160L96 480C96 515.3 124.7 544 160 544L480 544C515.3 544 544 515.3 544 480L544 160C544 124.7 515.3 96 480 96L160 96zM248 192.7C257.8 190 268.1 195.1 272 204.5L292.3 253.2C295.7 261.5 293.4 271 286.4 276.7L264.3 294.7C280.5 330.5 308.8 359.7 343.9 377.1L363.2 353.5C368.9 346.6 378.4 344.2 386.7 347.6L435.4 367.9C444.8 371.8 449.8 382.1 447.2 391.9L446.4 394.7C437.6 427 406.3 454.6 368.2 446.5C280.7 428 211.9 359.1 193.3 271.6C185.2 233.5 212.8 202.2 245.1 193.4L247.9 192.6z"/>
+    </svg>
+    </svg>   <p class="phonep">+31 0634250482</p> 
+           <svg class="location_icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+            <path d="M128 252.6C128 148.4 214 64 320 64C426 64 512 148.4 512 252.6C512 371.9 391.8 514.9 341.6 569.4C329.8 582.2 310.1 582.2 298.3 569.4C248.1 514.9 127.9 371.9 127.9 252.6zM320 320C355.3 320 384 291.3 384 256C384 220.7 355.3 192 320 192C284.7 192 256 220.7 256 256C256 291.3 284.7 320 320 320z"/>
+        </svg>
+    </svg>   <p class="locatp">Jol 129, 
+                            1186SH Amstelveen 
+                            Netherlands</p> 
+    </div>
+    </div>
+      <!-- <div class="box">
+        <h1 class="header1">Manage your greenhouse smarter</h1>
+        <p class="track">Track your greenhouse easily 💹</p> 
+        <button class="button">Create account</button>
+        <button class="button1">Login</button>
+      </div> -->
+        {% block content %}{% endblock %}
+
+</body>
+</html>

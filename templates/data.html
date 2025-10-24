@@ -1,0 +1,130 @@
+{% block content %}
+<div class="dashboard-container">
+  <h2>📆 Greenhouse Monthly Data</h2>
+
+  {% if data|length < 3 %}
+    <p style="color: gray; font-style: italic;">
+      📉 Je hebt nog maar {{ data|length }} meting(en) vandaag.
+      Zodra er meer data wordt verzameld, wordt de lijn duidelijker zichtbaar!
+    </p>
+  {% endif %}
+
+  <!-- Line Chart -->
+  <canvas id="monthlyChart" width="900" height="400"></canvas>
+
+  <br>
+
+  <!-- Data Table -->
+  {% if data %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Temperature (°C)</th>
+        <th>Humidity (%)</th>
+        <th>Voltage (V)</th>
+        <th>Lights</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in data %}
+      <tr>
+        <td>{{ row.date }}</td>
+        <td>{{ row.temperature }}</td>
+        <td>{{ row.humidity }}</td>
+        <td>{{ row.voltage }}</td>
+        <td>{{ row.lights }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No data yet for this month 🌿</p>
+  {% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  const monthlyData = {{ data | tojson }};
+  const labels = monthlyData.map(row => row.date);
+  const temperature = monthlyData.map(row => row.temperature);
+  const humidity = monthlyData.map(row => row.humidity);
+  const voltage = monthlyData.map(row => row.voltage);
+
+  const ctx = document.getElementById('monthlyChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: '🌡 Temperature (°C)',
+          data: temperature,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.15)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 3,
+          pointRadius: 6,
+          pointBackgroundColor: 'white',
+          pointBorderWidth: 3
+        },
+        {
+          label: '💧 Humidity (%)',
+          data: humidity,
+          borderColor: 'rgba(54, 162, 235, 1)',
+          backgroundColor: 'rgba(54, 162, 235, 0.15)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 3,
+          pointRadius: 6,
+          pointBackgroundColor: 'white',
+          pointBorderWidth: 3
+        },
+        {
+          label: '⚡ Voltage (V)',
+          data: voltage,
+          borderColor: 'rgba(75, 192, 75, 1)',
+          backgroundColor: 'rgba(75, 192, 75, 0.15)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 3,
+          pointRadius: 6,
+          pointBackgroundColor: 'white',
+          pointBorderWidth: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: {
+        duration: 1500,
+        easing: 'easeOutQuart'
+      },
+      plugins: {
+        legend: { position: 'top' },
+        title: {
+          display: true,
+          text: '📈 Monthly Greenhouse Sensor Readings'
+        }
+      },
+      elements: {
+        line: { borderWidth: 3, tension: 0.4 },
+        point: { radius: 6, backgroundColor: 'white', borderWidth: 3 }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Date' },
+          ticks: { autoSkip: true, maxTicksLimit: 10 }
+        },
+        y: {
+          title: { display: true, text: 'Value' },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

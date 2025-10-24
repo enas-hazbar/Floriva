@@ -1,0 +1,53 @@
+{% set active_page = request.endpoint %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Floriva</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% set active_page = request.endpoint %}
+
+    <div class="image-container">
+        <img class="background">
+        
+        <div class="menu">
+            <img class="logo" src="{{ url_for('static', filename='Logo.png') }}" alt="Logo">
+            <h1 class="header">Floriva</h1>
+
+            <p class="home">
+                <a href="{{ url_for('index') }}" class="{% if active_page == 'index' %}active{% endif %}">Home</a>
+            </p>
+            <p class="about">
+                <a href="{{ url_for('about') }}" class="{% if active_page == 'about' %}active{% endif %}">About</a>
+            </p>
+            <p class="contact">
+                <a href="{{ url_for('contact') }}" class="{% if active_page == 'contact' %}active{% endif %}">Contact</a>
+            </p>
+        </div>
+            <h1 class="header2">About</h1>
+<div class="about-section">
+  <video class="aboutvideo" autoplay muted loop>
+    <source src="{{ url_for('static', filename='Hailuo_Video_Animate the aerial landscape w_432608375525076999.mp4') }}" type="video/mp4">
+  </video>
+
+  <div class="about-text-box">
+    <h1>About Floriva</h1>
+     <p>With <strong>Floriva</strong>, you can view your greenhouse data anytime, anywhere <br> 
+      without needing to step inside.  
+      Monitor temperature, humidity in real-time,  
+      and make smarter decisions for a greener, healthier future 🌱</p> 
+  </div>
+</div>
+
+    </div>
+      <!-- <div class="box">
+        <h1 class="header1">Manage your greenhouse smarter</h1>
+        <p class="track">Track your greenhouse easily 💹</p> 
+        <button class="button">Create account</button>
+        <button class="button1">Login</button>
+      </div> -->
+        {% block content %}{% endblock %}
+
+</body>
+</html>
