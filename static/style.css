@@ -263,7 +263,6 @@ width: 180px;
     left: 170px;
     font-weight: bold;
 }
-/* Popup background overlay */
 .modal {
   display: none;
   position: fixed;
@@ -275,7 +274,6 @@ width: 180px;
   background-color: rgba(0, 0, 0, 0.5);
 }
 
-/* Popup box */
 .modal-content {
   background-image: linear-gradient(to top, #A5D6A7, #ffff);
   margin: 5% auto;
@@ -294,11 +292,10 @@ width: 180px;
   margin-bottom: 25px;
 }
 
-/* Input layout */
 .input-group {
   display: flex;
   align-items: center;
-  gap: 12px; /* space between icon and input */
+  gap: 12px; 
   margin: 30px 0;
   border-bottom: 1px solid #1b3d1f;
   padding-bottom: 6px;
@@ -314,16 +311,14 @@ width: 180px;
   flex: 1;
 }
 
-/* Icon style */
 .icon {
   width: 32px;
   height: 32px;
   fill: #0c731d;
-  flex-shrink: 0; /* prevents icon from resizing */
+  flex-shrink: 0; 
   margin-left: 2px;
 }
 
-/* Input fields */
 .account-form input {
   border: none;
   background: none;
@@ -331,10 +326,9 @@ width: 180px;
   font-size: 16px;
   color: #1b3d1f;
   width: 100%;
-  padding-top: 4px; /* adds a bit of breathing room above text */
+  padding-top: 4px; 
 }
 
-/* Button */
 .next-btn {
   display: block;
   width: 150px;
@@ -397,7 +391,7 @@ width: 180px;
   color: #2e7d32;
 }
 #loginModal .input-group {
-  margin: 40px 0; /* more space between fields */
+  margin: 40px 0; 
 }
 .dashboard-container {
   margin: 50px auto;

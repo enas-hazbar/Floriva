@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 
 
-# 🔹 Load environment variables
+#  Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
@@ -23,7 +23,7 @@ def add_header(response):
 
 app.secret_key = os.getenv('SECRET_KEY', 'fallback_secret')
 
-# 🔹 Database configuration
+# Database configuration
 app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'localhost')
 app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'root')
 app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', '')
@@ -31,7 +31,7 @@ app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'Floriva')
 
 mysql = MySQL(app)
 
-# ---------------- ROUTES ---------------- #
+#ROUTES#
 
 @app.route('/')
 def index():
@@ -46,7 +46,7 @@ def contact():
     return render_template('contact.html')
 
 
-# ✅ Test DB connection
+#Test DB connection
 @app.route('/test_db')
 def test_db():
     try:
@@ -82,8 +82,7 @@ def weekformat(value):
         return f" {int(week_str)} {year}"
     except Exception:
         return value    
-# 🔹 Register new user
-# 🔹 Register new user
+# Register new user
 @app.route('/register', methods=['POST'])
 def register():
     name = request.form['name']
@@ -94,43 +93,37 @@ def register():
     telephone = request.form['telephone']
     greenhouse = request.form['greenhouse_name']
 
-    # ✅ 1. Check if any field is empty
     if not all([name, surname, username, password, email, telephone, greenhouse]):
         return render_template('index.html', error="All fields are required.")
 
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # ✅ 2. Check if username already exists
+    # Check if username already exists
     cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
     existing_user = cursor.fetchone()
     if existing_user:
         cursor.close()
         return render_template('index.html', error="This username is already taken.")
 
-    # ✅ 3. Hash the password before saving
+    # Hash the password before saving
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-    # ✅ 4. Insert new user into the database
+    # Insert new user into the database
     cursor.execute("""
         INSERT INTO users (name, surname, username, password, email, telephone, greenhouse_name)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
     """, (name, surname, username, hashed_password, email, telephone, greenhouse))
     mysql.connection.commit()
 
-    # ✅ 5. Retrieve the newly inserted user's ID
     cursor.execute("SELECT id, username FROM users WHERE username = %s", (username,))
     new_user = cursor.fetchone()
     cursor.close()
-
-    # ✅ 6. Log the new user in automatically
     session['logged_in'] = True
     session['user_id'] = new_user['id']
     session['username'] = new_user['username']
-
-    # ✅ 7. Redirect to the dashboard (will show “🌱 Welcome” if no data yet)
     return redirect(url_for('dashboard_filter'))
 
-# 🔹 User login
+#User login
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form.get('username', '').strip()
@@ -143,7 +136,7 @@ def login():
     cursor.execute("SELECT id, username, password FROM users WHERE username = %s", (username,))
     user = cursor.fetchone()
 
-    # 🔹 Get all usernames (to check if username exists at all)
+    #Get all usernames (to check if username exists at all)
     cursor.execute("SELECT username FROM users")
     all_users = [row['username'] for row in cursor.fetchall()]
     cursor.close()
@@ -152,7 +145,7 @@ def login():
     if username not in all_users:
         return {"ok": False, "error": "Username and password are incorrect."}
 
-    # ✅ Case 2: Username exists but not found in query (shouldn’t happen, but safe)
+    # ✅ Case 2: Username exists but not found in query 
     if not user:
         return {"ok": False, "error": "Username not found."}
 
@@ -167,34 +160,43 @@ def login():
 
     return {"ok": True, "redirect": url_for('dashboard_filter')}
 
+#logout
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
 
-
+#Add sensor for user
 @app.route('/add_device', methods=['POST'])
 def add_device():
     if 'user_id' not in session:
-        return redirect(url_for('index'))  # not logged in
+        return redirect(url_for('index'))
 
-    device_name = request.form.get('device_name')
-
+    user_id = session['user_id']
+    device_name = request.form.get('device_name', '').strip()
     if not device_name:
         return {"ok": False, "error": "Device name is required."}, 400
 
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute(
         "INSERT INTO devices (user_id, device_name, created_at) VALUES (%s, %s, NOW())",
-        (session['user_id'], device_name)
+        (user_id, device_name)
     )
     mysql.connection.commit()
+    new_device_id = cursor.lastrowid
     cursor.close()
 
-    # ✅ Redirect to dashboard after saving the device
+    #write it to a small file that your serial script can read
+    device_id_path = os.path.join(os.path.dirname(__file__), "device_id.txt")
+    try:
+        with open(device_id_path, "w") as f:
+            f.write(str(new_device_id))
+        print(f"✅ device_id.txt written with ID {new_device_id}")
+    except Exception as e:
+        print("⚠️ Could not write device_id.txt:", e)
     return redirect(url_for('dashboard_filter'))
 
-# 🔹 Arduino → Flask Data Upload
+# Arduino → Flask Data Upload
 @app.route('/upload_data', methods=['POST'])
 def upload_data():
     data = request.get_json(force=True)
@@ -227,18 +229,34 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
-# 🔹 Dashboard
+#Dashboard
 @app.route('/dashboard', methods=['GET'])
 @login_required
 def dashboard_filter():
+    user_id = session.get('user_id')
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute("SELECT id, device_name FROM devices WHERE user_id = %s", (user_id,))
+    devices = cursor.fetchall()
+    if not devices:
+        return render_template(
+            'dashboard.html',
+            data=[],
+            stats=None,
+            devices=[],
+            view_type='day',
+            selected_date=datetime.today().strftime('%Y-%m-%d'),
+            prev_date=None,
+            next_date=None,
+            username=session.get('username')
+        )
 
+    # Collect all device IDs for this user
+    device_ids = tuple(d['id'] for d in devices)
+
+    # Handle view types
     view_type = request.args.get('view', 'day')
     selected_date = request.args.get('date')
     today = datetime.today()
-
-    # Normalize selected_date based on view type
     if view_type == 'week':
         if not selected_date:
             iso = today.isocalendar()
@@ -268,44 +286,39 @@ def dashboard_filter():
             date_obj = today
             selected_date = date_obj.strftime('%Y-%m-%d')
 
-    # --- DAY VIEW ---
+    # ---  DAY VIEW ---
     if view_type == 'day':
         cursor.execute("""
             SELECT 
                 TRIM(period) AS period,
-
-                -- Latest temperature
                 (SELECT temperature 
                  FROM data d2 
                  WHERE d2.period = d1.period 
                    AND d2.date = d1.date 
+                   AND d2.device_id IN %s
                  ORDER BY d2.timestamp DESC 
                  LIMIT 1) AS temperature,
-
-                -- Latest humidity
                 (SELECT humidity 
                  FROM data d3 
                  WHERE d3.period = d1.period 
                    AND d3.date = d1.date 
+                   AND d3.device_id IN %s
                  ORDER BY d3.timestamp DESC 
                  LIMIT 1) AS humidity,
-
-                -- Latest voltage
                 (SELECT voltage
                  FROM data d4
                  WHERE d4.period = d1.period
                    AND d4.date = d1.date
+                   AND d4.device_id IN %s
                  ORDER BY d4.timestamp DESC
                  LIMIT 1) AS voltage,
-
-                -- Latest lights status
                 SUBSTRING_INDEX(GROUP_CONCAT(lights ORDER BY id DESC), ',', 1) AS lights,
                 date
             FROM data d1
-            WHERE date = %s
+            WHERE date = %s AND device_id IN %s
             GROUP BY period, date
             ORDER BY FIELD(period, 'Morning', 'Afternoon', 'Evening')
-        """, (date_obj.strftime('%Y-%m-%d'),))
+        """, (device_ids, device_ids, device_ids, date_obj.strftime('%Y-%m-%d'), device_ids))
         data = cursor.fetchall()
 
         cursor.execute("""
@@ -316,11 +329,11 @@ def dashboard_filter():
                 MAX(humidity) AS high_hum,
                 ROUND(AVG(voltage), 2) AS avg_voltage
             FROM data 
-            WHERE date = %s
-        """, (date_obj.strftime('%Y-%m-%d'),))
+            WHERE date = %s AND device_id IN %s
+        """, (date_obj.strftime('%Y-%m-%d'), device_ids))
         stats = cursor.fetchone()
 
-    # --- WEEK VIEW ---
+    # ---  WEEK VIEW ---
     elif view_type == 'week':
         week_anchor = date_obj.date()
         cursor.execute("""
@@ -331,30 +344,29 @@ def dashboard_filter():
                    ROUND(SUM(lights = 'ON') / COUNT(*) * 100, 1) AS lights_on_pct
             FROM data
             WHERE YEARWEEK(date, 3) = YEARWEEK(%s, 3)
+              AND device_id IN %s
             GROUP BY date
             ORDER BY date ASC
-        """, (week_anchor,))
+        """, (week_anchor, device_ids))
         data = cursor.fetchall()
 
         cursor.execute("""
             SELECT 
-                MIN(d.temperature) AS low_temp,
-                MAX(d.temperature) AS high_temp,
-                MIN(d.humidity) AS low_hum,
-                MAX(d.humidity) AS high_hum,
-                ROUND(AVG(d.voltage), 2) AS avg_voltage
-            FROM (
-                SELECT temperature, humidity, voltage
-                  FROM data
-                 WHERE YEARWEEK(date, 3) = YEARWEEK(%s, 3)
-            ) AS d
-        """, (week_anchor,))
+                MIN(temperature) AS low_temp,
+                MAX(temperature) AS high_temp,
+                MIN(humidity) AS low_hum,
+                MAX(humidity) AS high_hum,
+                ROUND(AVG(voltage), 2) AS avg_voltage
+            FROM data
+            WHERE YEARWEEK(date, 3) = YEARWEEK(%s, 3)
+              AND device_id IN %s
+        """, (week_anchor, device_ids))
         stats = cursor.fetchone()
 
         iso = date_obj.isocalendar()
         selected_date = f"{iso.year}-W{iso.week:02d}"
 
-    # --- MONTH VIEW ---
+    # ---  MONTH VIEW ---
     else:
         month_anchor = date_obj.date()
         cursor.execute("""
@@ -364,30 +376,31 @@ def dashboard_filter():
                    ROUND(AVG(voltage), 2) AS avg_voltage,
                    ROUND(SUM(lights = 'ON') / COUNT(*) * 100, 1) AS lights_on_pct
             FROM data
-            WHERE MONTH(date) = MONTH(%s) AND YEAR(date) = YEAR(%s)
+            WHERE MONTH(date) = MONTH(%s)
+              AND YEAR(date) = YEAR(%s)
+              AND device_id IN %s
             GROUP BY date
             ORDER BY date ASC
-        """, (month_anchor, month_anchor))
+        """, (month_anchor, month_anchor, device_ids))
         data = cursor.fetchall()
 
         cursor.execute("""
             SELECT 
-                MIN(d.temperature) AS low_temp,
-                MAX(d.temperature) AS high_temp,
-                MIN(d.humidity) AS low_hum,
-                MAX(d.humidity) AS high_hum,
-                ROUND(AVG(d.voltage), 2) AS avg_voltage
-            FROM (
-                SELECT temperature, humidity, voltage
-                  FROM data
-                 WHERE MONTH(date) = MONTH(%s) AND YEAR(date) = YEAR(%s)
-            ) AS d
-        """, (month_anchor, month_anchor))
+                MIN(temperature) AS low_temp,
+                MAX(temperature) AS high_temp,
+                MIN(humidity) AS low_hum,
+                MAX(humidity) AS high_hum,
+                ROUND(AVG(voltage), 2) AS avg_voltage
+            FROM data
+            WHERE MONTH(date) = MONTH(%s)
+              AND YEAR(date) = YEAR(%s)
+              AND device_id IN %s
+        """, (month_anchor, month_anchor, device_ids))
         stats = cursor.fetchone()
 
         selected_date = date_obj.strftime('%Y-%m')
 
-    # --- Navigation
+    # --- Next and pervious ---
     if view_type == 'day':
         prev_date = (date_obj - timedelta(days=1)).strftime('%Y-%m-%d')
         next_date = (date_obj + timedelta(days=1)).strftime('%Y-%m-%d')
@@ -403,16 +416,31 @@ def dashboard_filter():
         next_date = next_month.strftime('%Y-%m')
 
     cursor.close()
+    if not data:
+        return render_template(
+            'dashboard.html',
+            data=[],
+            stats=None,
+            devices=devices,
+            view_type=view_type,
+            selected_date=selected_date,
+            prev_date=prev_date,
+            next_date=next_date,
+            username=session.get('username')
+        )
+
     return render_template(
         'dashboard.html',
         data=data,
         stats=stats,
+        devices=devices,
         view_type=view_type,
         selected_date=selected_date,
         prev_date=prev_date,
         next_date=next_date,
-        username=session.get('username') 
+        username=session.get('username')
     )
+
 @app.route('/check_username')
 def check_username():
     username = request.args.get('username', '').strip()

@@ -9,7 +9,6 @@ SERIAL_PORT = "COM3"
 BAUD_RATE = 9600
 FLASK_URL = "http://127.0.0.1:5000/upload_data"
 
-# 🔹 same path you wrote in Flask
 DEVICE_ID_FILE = os.path.join(os.path.dirname(__file__), "device_id.txt")
 
 def read_device_id():
@@ -20,7 +19,6 @@ def read_device_id():
     except Exception:
         return None
 
-# wait until device_id.txt exists (first-time setup)
 device_id = read_device_id()
 while device_id is None:
     print("⏳ Waiting for device_id.txt (create a sensor in the UI)...")
@@ -43,7 +41,6 @@ last_mtime = os.path.getmtime(DEVICE_ID_FILE)
 
 while True:
     try:
-        # 🔄 hot-reload device_id if file changed (user added a new sensor)
         try:
             mtime = os.path.getmtime(DEVICE_ID_FILE)
             if mtime != last_mtime:
@@ -86,7 +83,7 @@ while True:
         period = "Morning" if hour < 12 else "Afternoon" if hour < 18 else "Evening"
 
         payload = {
-            "device_id": device_id,  # ✅ dynamic!
+            "device_id": device_id,  
             "period": period,
             "temperature": temperature,
             "humidity": humidity,

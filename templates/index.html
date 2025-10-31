@@ -34,7 +34,7 @@
     <button class="button1">Login</button>
   </div>
 
-  <!-- Step 1: Create Account -->
+  <!-- Create Account -->
   <div id="createAccountModal" class="modal">
     <div class="modal-content">
       <span class="close-btn">&times;</span>
@@ -91,7 +91,7 @@
     </div>
   </div>
 
-  <!-- Step 2: Username + Password -->
+  <!-- Username + Password -->
   <div id="usernameModal" class="modal">
     <div class="modal-content">
       <span class="close-btn">&times;</span>
@@ -150,7 +150,7 @@
     </div>
   </div>
 
-  <!-- Step 3: Sensor Info -->
+  <!-- Sensor name -->
 <div id="sensorModal" class="modal">
   <div class="modal-content">
     <span class="close-btn">&times;</span>
@@ -207,7 +207,6 @@ const loginBtn = document.querySelector(".button1");
 const usernameForm = document.getElementById("usernameForm");
 const sensorModal = document.getElementById("sensorModal");
 
-// --- Step 1: Open & transition between modals ---
 openBtn.addEventListener("click", () => createModal.style.display = "block");
 
 nextToUsername.addEventListener("click", () => {
@@ -218,7 +217,6 @@ nextToUsername.addEventListener("click", () => {
     return;
   }
 
-  // Pass values to hidden fields
   document.getElementById("hiddenName").value = form.name.value;
   document.getElementById("hiddenSurname").value = form.surname.value;
   document.getElementById("hiddenEmail").value = form.email.value;
@@ -251,7 +249,6 @@ loginForm.addEventListener("submit", async (e) => {
   const usernameInput = loginForm.querySelector('input[name="username"]');
   const passwordInput = loginForm.querySelector('input[name="password"]');
 
-  // Reset previous styles
   usernameInput.style.border = "";
   passwordInput.style.border = "";
   loginError.style.display = "none";
@@ -261,8 +258,6 @@ loginForm.addEventListener("submit", async (e) => {
   } else {
     loginError.textContent = data.error;
     loginError.style.display = "block";
-
-    // 🔹 Highlight the wrong field(s)
     if (data.error.includes("Username") && data.error.includes("password")) {
       usernameInput.style.border = "2px solid red";
       passwordInput.style.border = "2px solid red";
@@ -274,8 +269,6 @@ loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-
-// --- Step 2: Username + Password validation ---
 const usernameInput = document.querySelector('input[name="username"]');
 const usernameError = document.getElementById("usernameError");
 
@@ -294,7 +287,6 @@ const reqNumber = document.getElementById("number");
 
 let usernameTaken = false;
 
-// ✅ Check username availability (live)
 usernameInput.addEventListener("input", async () => {
   const value = usernameInput.value.trim();
   if (!value) {
@@ -323,7 +315,6 @@ usernameInput.addEventListener("input", async () => {
   }
 });
 
-// ✅ Password strength validation
 function validatePassword(password) {
   let validCount = 0;
   if (password.length >= 8) { reqLength.className = "valid"; validCount++; } else reqLength.className = "invalid";
@@ -354,7 +345,6 @@ function validatePassword(password) {
 passwordInput.addEventListener("input", () => {
   const isValid = validatePassword(passwordInput.value);
 
-  // ✅ Hide error if password is strong
   if (isValid) {
     passwordError.style.display = "none";
   }
@@ -362,14 +352,12 @@ passwordInput.addEventListener("input", () => {
 confirmPassword.addEventListener("input", () => {
   passwordMatch.style.display = confirmPassword.value !== passwordInput.value ? "block" : "none";
 
-  // ✅ Also hide weak password error if user improves password
   if (validatePassword(passwordInput.value)) {
     passwordError.style.display = "none";
   }
 });
 
 
-// ✅ Final form validation + submit
 usernameForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -377,14 +365,12 @@ usernameForm.addEventListener("submit", async (e) => {
   passwordError.style.display = "none";
   passwordMatch.style.display = "none";
 
-  // Stop if username already exists
   if (usernameTaken) {
     usernameError.style.display = "block";
     usernameInput.focus();
     return;
   }
 
-  // Stop if password too weak
   const isValid = validatePassword(passwordInput.value);
   if (!isValid) {
     passwordError.style.display = "block";
@@ -392,14 +378,11 @@ usernameForm.addEventListener("submit", async (e) => {
     return;
   }
 
-  // Stop if passwords don’t match
   if (confirmPassword.value !== passwordInput.value) {
     passwordMatch.style.display = "block";
     confirmPassword.focus();
     return;
   }
-
-  // ✅ All good — register and move to next step
   const formData = new FormData(e.target);
   const response = await fetch("/register", {
     method: "POST",

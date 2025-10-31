@@ -8,7 +8,7 @@
 <body class="dark-mode">
 
 <div class="dashboard-container">
-  <!-- 🌙☀️ Dark/Light Mode Toggle Switch -->
+  <!-- Dark/Light Mode Toggle Switch -->
   <div class="toggle-container">
     <label class="mode-switch">
       <input type="checkbox" id="modeToggle" checked>
@@ -22,7 +22,7 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
       <path d="M463 448.2C440.9 409.8 399.4 384 352 384L288 384C240.6 384 199.1 409.8 177 448.2C212.2 487.4 263.2 512 320 512C376.8 512 427.8 487.3 463 448.2zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM320 336C359.8 336 392 303.8 392 264C392 224.2 359.8 192 320 192C280.2 192 248 224.2 248 264C248 303.8 280.2 336 320 336z"/>
     </svg>
-    <!-- 👤 User Info Popup -->
+    <!--  User Info Popup -->
 <div id="userPopup" class="user-popup">
   <h3>Welcome, {{ session.username }}</h3>
   <button class="logout-btn">Logout</button>
@@ -32,14 +32,14 @@
   <h2>📊 Greenhouse Data Overview</h2>
   
 
-  <!-- 🔹 Filter Buttons -->
+  <!-- Filter Buttons -->
   <div style="text-align:center; margin-bottom: 20px;">
     <a href="{{ url_for('dashboard_filter', view='day') }}" class="btn-nav {% if view_type=='day' %}active{% endif %}">Day</a>
     <a href="{{ url_for('dashboard_filter', view='week') }}" class="btn-nav {% if view_type=='week' %}active{% endif %}">Week</a>
     <a href="{{ url_for('dashboard_filter', view='month') }}" class="btn-nav {% if view_type=='month' %}active{% endif %}">Month</a>
   </div>
 
-  <!-- 🔹 Date / Week / Month Picker -->
+  <!--  Date / Week / Month Picker -->
   <div style="text-align:center; margin-bottom: 25px; ">
     <h3>
       <span>
@@ -75,12 +75,12 @@
     </div>
   </div>
 
-  <!-- 🔹 Chart (Week & Month only) -->
+  <!-- Chart (Week & Month only) -->
   {% if view_type != 'day' %}
   <canvas id="dataChart" width="900" height="400"></canvas>
   {% endif %}
 
-  <!-- 🔹 Table (Day only) -->
+  <!-- Table (Day only) -->
   {% if view_type == 'day' %}
     <div id="liveDataContainer">
       {% if data %}
@@ -112,7 +112,7 @@
     </div>
   {% endif %}
 
-  <!-- 🔹 Stats Summary -->
+  <!-- Stats Summary -->
   {% if stats %}
   <div style="margin-top: 20px; text-align: center;">
     🌡 <strong>Temp:</strong> lowest {{ stats.low_temp }} °C | highest {{ stats.high_temp }} °C |
@@ -120,14 +120,14 @@
   </div>
   {% endif %}
 
-  <!-- 🔹 Navigation Buttons -->
+  <!-- Navigation Buttons -->
   <div class="nav-buttons" style="margin-top: 30px; text-align: center;">
     <a href="{{ url_for('dashboard_filter', view=view_type, date=prev_date) }}" class="btn-nav">⬅️ Previous {{ view_type|capitalize }}</a>
     <a href="{{ url_for('dashboard_filter', view=view_type, date=next_date) }}" class="btn-nav">Next {{ view_type|capitalize }} ➡️</a>
   </div>
 </div>
 
-<!-- 📈 Chart.js (Week/Month) -->
+<!-- Chart.js (Week/Month) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 {% if view_type != 'day' %}
@@ -167,7 +167,7 @@ new Chart(ctx, {
 </script>
 {% endif %}
 
-<!-- 🔄 Auto-refresh every 5 seconds -->
+<!-- Auto-refresh every 5 seconds -->
 <script>
   const userIcon = document.querySelector('svg');
 const userPopup = document.getElementById('userPopup');
@@ -176,7 +176,6 @@ userIcon.addEventListener('click', (e) => {
   userPopup.style.display = (userPopup.style.display === 'block') ? 'none' : 'block';
 });
 
-// Close popup if clicking outside
 document.addEventListener('click', (e) => {
   if (!userPopup.contains(e.target) && e.target !== userIcon) {
     userPopup.style.display = 'none';
@@ -213,7 +212,6 @@ window.onload = () => {
   });
 </script>
 
-<!-- 💅 Styles -->
 <style>
 .dark-mode { background-color: #121212; color: #f1f1f1; }
 
@@ -233,7 +231,6 @@ window.onload = () => {
   right: 20px;
 }
 
-/* 🌙☀️ Mode Switch */
 .mode-switch {
   position: relative;
   display: inline-block;
@@ -255,7 +252,6 @@ window.onload = () => {
 .slider .sun { display: none; }
 .slider .moon { display: block; color: #c3a6ff; }
 
-/* When bright mode */
 input:checked + .slider {
   background-color: #ffffff;
   color: #007bff;
@@ -263,7 +259,6 @@ input:checked + .slider {
 input:checked + .slider .moon { display: none; }
 input:checked + .slider .sun { display: block; }
 
-/* Buttons + Tables (your style unchanged) */
 .btn-nav {
   display: inline-block;
   padding: 10px 18px;
@@ -299,13 +294,13 @@ body:not(.dark-mode) .dashboard-container { background-color: #f9f9f9; color: bl
 body:not(.dark-mode) .data-table { background-color: white; color: black; }
 body:not(.dark-mode) .data-table th { background-color: #4CAF50; color: white; }
 svg {
-  fill: black; /* Default (light mode) */
+  fill: black; 
   cursor: pointer;
   transition: fill 0.3s ease;
 }
 
 body.dark-mode svg {
-  fill: white; /* Turn white in dark mode */
+  fill: white; 
 }
 body.dark-mode .user-popup {
     background: rgb(255, 255, 255);
@@ -314,7 +309,6 @@ body.dark-mode .user-popup h3 {
   color: #000;
 }
 
-/* 👤 User Popup */
 .user-popup {
   display: none;
   position: absolute;
@@ -346,7 +340,6 @@ body.dark-mode .user-popup h3 {
 .logout-btn:hover {
   background: #45a049;
 }
-/* 🌡 Temperature Icon - gentle glow */
 .chart-legend-icon-temp {
   display: inline-block;
   animation: tempGlow 2s ease-in-out infinite alternate;
@@ -356,7 +349,6 @@ body.dark-mode .user-popup h3 {
   to { text-shadow: 0 0 10px rgba(255,99,132,1); }
 }
 
-/* 💧 Humidity Icon - floating effect */
 .chart-legend-icon-hum {
   display: inline-block;
   animation: humFloat 3s ease-in-out infinite alternate;
@@ -366,7 +358,6 @@ body.dark-mode .user-popup h3 {
   to { transform: translateY(-3px); }
 }
 
-/* ⚡ Voltage Icon - flicker */
 .chart-legend-icon-voltage {
   display: inline-block;
   animation: voltageBlink 1.5s infinite;
@@ -376,7 +367,6 @@ body.dark-mode .user-popup h3 {
   25%, 75% { opacity: 0.4; }
 }
 
-/* 💡 Lights Icon - pulse */
 .chart-legend-icon-lights {
   display: inline-block;
   animation: lightPulse 2s infinite alternate;
