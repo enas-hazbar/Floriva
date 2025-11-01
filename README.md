@@ -1,4 +1,4 @@
-# 🌱 Floriva – Smart Greenhouse Monitoring System
+# 🌱 Floriva –  Greenhouse Monitoring System
 
 ## 📖 Overview
 
@@ -166,8 +166,5 @@ CREATE TABLE data (
 | **Lucid.app**          | ERD & database diagrams   |
 
 ---
-
-## ✍️ Author
-
 **Written by:** Enas Hezabr
 ---
